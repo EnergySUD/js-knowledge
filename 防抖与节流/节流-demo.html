@@ -1,1 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans">
 
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="x-ua-compatible" content="IE=edge, chrome=1">
+		<title>throttle-demo</title>
+		<style>
+			#container {
+				width: 100%;
+				height: 200px;
+				line-height: 200px;
+				text-align: center;
+				color: #fff;
+				background-color: #444;
+				font-size: 30px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="container"></div>
+		<script>
+			function throttle(func, wait, options) {
+				let timeout, context, args, result;
+				let previous = 0;
+				if(!options) options = {};
+
+				let later = function() {
+					previous = options.leading === false ? 0 : new Date().getTime();
+					timeout = null;
+					func.apply(context, args);
+					if(!timeout) context = args = null;
+				};
+
+				let throttled = function() {
+					let now = new Date().getTime();
+					if(!previous && options.leading === false) previous = now;
+					let remaining = wait - (now - previous);
+					context = this;
+					args = arguments;
+					if(remaining <= 0 || remaining > wait) {
+						if(timeout) {
+							clearTimeout(timeout);
+							timeout = null;
+						}
+						previous = now;
+						func.apply(context, args);
+						if(!timeout) context = args = null;
+					} else if(!timeout && options.trailing !== false) {
+						timeout = setTimeout(later, remaining);
+					}
+				};
+
+				throttled.cancel = function() {
+					clearTimeout(timeout);
+					previous = 0;
+					timeout = null;
+				}
+
+				return throttled;
+			}
+
+			let count = 1;
+			let container = document.getElementById('container');
+
+			function getUserAction() {
+				container.innerHTML = count++;
+			};
+
+			//container.onmousemove = getUserAction;
+			container.onmousemove = throttle(getUserAction, 1000); //节流
+		</script>
+	</body>
+
+</html>
